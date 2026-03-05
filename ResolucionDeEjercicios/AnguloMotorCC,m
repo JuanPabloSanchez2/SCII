@@ -1,0 +1,92 @@
+% Resolucion del ejercicio utilizando Gemini IA
+% La resolucion requirio varias iteraciones hasta lograr los requerimiento del ejercicio.
+
+% Parámetros del Motor CC
+Ra = 2.0;       
+Laa = 0.05;     
+Km = 0.1;       
+Ki = 0.1;       
+J = 0.02;       
+Bm = 0.01;      
+
+% Matrices del Espacio de Estados
+A = [-Ra/Laa, -Km/Laa, 0;
+      Ki/J,   -Bm/J,   0;
+      0,       1,      0];
+B = [1/Laa; 0; 0];
+E = [0; -1/J; 0];
+C = [0, 0, 1];
+D = 0;
+
+% Aumento del Sistema (Integrador)
+A_aug = [A, zeros(3,1); -C, 0];
+B_aug = [B; 0];
+
+% Diseño del Controlador LQR
+Q = diag([1, 1, 5000, 100]); 
+R = 1; 
+K_aug = lqr(A_aug, B_aug, Q, R);
+
+K = K_aug(1:3);      
+Ki_gain = -K_aug(4); 
+
+% Simulación Discreta con Saturación y Anti-Windup
+h = 0.001;          
+t = 0:h:1.5;        % <-- CAMBIO: Aumentamos el tiempo a 1.5 segundos
+N = length(t);
+
+x = [0; 0; 1];      
+x_i = 0;            
+theta_sim = zeros(1, N);
+ia_sim = zeros(1, N);
+u_sim = zeros(1, N);
+
+for k = 1:N
+    if t(k) < 0.05
+        ref = 1;
+    else
+        ref = 2;
+    end
+    
+    T_L = 1.15e-5; 
+    
+    error = ref - x(3);
+    x_error = [x(1); x(2); x(3) - ref];
+    
+    v_a_req = -K * x_error + Ki_gain * x_i;
+    
+    % Saturación Física a 12V
+    v_a = max(-12, min(12, v_a_req)); 
+    
+    % Lógica Anti-Windup (Clamping)
+    if abs(v_a_req) <= 12
+        x_i = x_i + error * h; 
+    end
+    
+    u_sim(k) = v_a;
+    ia_sim(k) = x(1);
+    theta_sim(k) = x(3);
+    
+    dx = A * x + B * v_a + E * T_L;
+    x = x + dx * h;
+end
+
+% Gráficas Comparativas
+figure('Name', 'Control Realista de Motor CC - Vista Extendida');
+
+subplot(3,1,1);
+plot(t, theta_sim, 'b', 'LineWidth', 1.5); hold on;
+plot([0 0.05 0.05 1.5], [1 1 2 2], 'k--', 'LineWidth', 1); % Ajustado al nuevo tiempo
+title('\theta_t (Ángulo del Rotor)');
+ylabel('Posición (rad)'); grid on; ylim([0.5 2.5]);
+
+subplot(3,1,2);
+plot(t, ia_sim, 'r', 'LineWidth', 1.5);
+title('i_a (Corriente de Armadura)');
+ylabel('Corriente (A)'); grid on; 
+ylim([-10 10]); % <-- CAMBIO: Mayor amplitud en el eje Y para la corriente
+
+subplot(3,1,3);
+plot(t, u_sim, 'm', 'LineWidth', 1.5);
+title('u_t (Tensión Aplicada - Limitada a \pm 12V)');
+xlabel('Tiempo [Seg.]'); ylabel('Voltaje (V)'); grid on; ylim([-15 15]);
