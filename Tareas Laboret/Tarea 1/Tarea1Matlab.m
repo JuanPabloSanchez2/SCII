@@ -2,19 +2,18 @@
 % Sanchez Busso, Juan Pablo
 
 % Especificaciones particulares
-p1=0; 
-p2=-2; 
-cero=-10; 
+p1=-2; 
+p2=0;  
 ganancia=5;
-sobrepaso=10;
-%tiempo2%=3; 
+sobrepaso=5;
+%tiempo2%=2; 
 error=0;
-Tm=0.09;
+Tm=0.07;
 
 % --- A LAZO ABIERTO ---
 
 % Obtener la funcion de transferencia continua G(s)
-G = zpk(cero, [p1 p2], ganancia);
+G = zpk([], [p1 p2], ganancia);
 
 % Hallar la FT de lazo abierto Gd(s)
 Gd = c2d(G, Tm, 'zoh');
@@ -78,3 +77,30 @@ title('Lugar de las Raices - Discreto Gd(s)');
 figure;
 rlocus(Gd1);
 title('Lugar de las Raices - Discreto (Tm x 10)');
+
+% Obtener los valores de xi, wn, wd y td según las especificaciones
+xi = -log(S/100) / sqrt(pi^2 + (log(S/100))^2);
+wn = 4 / (xi * ts);
+wd = wn * sqrt(1 - xi^2);
+td = 2 * pi / wd;
+
+fprintf('\n--- Parámetros de Diseño ---');
+fprintf('\nFactor de amortiguamiento (xi): %.4f', xi);
+fprintf('\nFrecuencia natural (wn): %.4f rad/s', wn);
+fprintf('\nFrecuencia amortiguada (wd): %.4f rad/s', wd);
+
+% Calcular cantidad de muestras por ciclo
+m = td / Tm;
+fprintf('\nMuestras por ciclo (m): %.2f\n', m);
+
+% Equivalencia plano z (Ubicación de polos deseados)
+r = exp(-xi * wn * Tm);
+ang_rad = wd * Tm;
+ang_deg = ang_rad * (180/pi);
+z_deseado_1 = r * exp(1i * ang_rad);
+z_deseado_2 = r * exp(-1i * ang_rad);
+
+fprintf('\n--- Ubicación de Polos Deseados en z ---');
+fprintf('\nRadio (r): %.4f', r);
+fprintf('\nAngulo (omega): %.4f rad (%.2f grados)', ang_rad, ang_deg);
+fprintf('\nPolo deseado: %.4f +/- %.4fj\n\n', real(z_deseado_1), imag(z_deseado_1));
