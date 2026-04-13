@@ -6,7 +6,7 @@ p1=-2;
 p2=0;  
 ganancia=5;
 sobrepaso=5;
-tiempo2%=2; 
+ts=2; 
 error=0;
 Tm=0.07;
 
@@ -79,7 +79,7 @@ rlocus(Gd1);
 title('Lugar de las Raices - Discreto (Tm x 10)');
 
 % Obtener los valores de xi, wn, wd y td según las especificaciones
-xi = -log(S/100) / sqrt(pi^2 + (log(S/100))^2);
+xi = -log(sobrepaso/100) / sqrt(pi^2 + (log(sobrepaso/100))^2);
 wn = 4 / (xi * ts);
 wd = wn * sqrt(1 - xi^2);
 td = 2 * pi / wd;
