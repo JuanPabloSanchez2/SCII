@@ -6,7 +6,7 @@ p1=-2;
 p2=0;  
 ganancia=5;
 sobrepaso=5;
-%tiempo2%=2; 
+tiempo2%=2; 
 error=0;
 Tm=0.07;
 
